@@ -1,0 +1,67 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n+nb}{close}\PYG{+w}{ }\PYG{n+nb}{all}\PYG{p}{;}\PYG{+w}{ }\PYG{n+nb}{clc}\PYG{p}{;}\PYG{+w}{ }\PYG{n+nb}{clear}\PYG{p}{;}
+
+\PYG{c}{\PYGZpc{}\PYGZpc{} 读取图像}
+\PYG{n}{I}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n+nb}{imread}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}1.jpeg\PYGZdq{}}\PYG{p}{);}
+\PYG{n}{I\PYGZus{}coloured}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n}{I}\PYG{p}{;}
+
+\PYG{k}{if}\PYG{+w}{ }\PYG{n+nb}{size}\PYG{p}{(}\PYG{n}{I}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{==}\PYG{+w}{ }\PYG{l+m+mi}{3}
+\PYG{+w}{    }\PYG{n}{I}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n+nb}{rgb2gray}\PYG{p}{(}\PYG{n}{I}\PYG{p}{);}
+\PYG{k}{else}
+\PYG{+w}{    }\PYG{n}{I\PYGZus{}coloured}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n+nb}{cat}\PYG{p}{(}\PYG{l+m+mi}{3}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{I}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{I}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{I}\PYG{p}{);}
+\PYG{k}{end}
+
+\PYG{n}{I}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n+nb}{im2double}\PYG{p}{(}\PYG{n}{I}\PYG{p}{);}
+
+\PYG{c}{\PYGZpc{}\PYGZpc{} 计算 RMS 对比度}
+\PYG{n}{wsize}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{p}{[}\PYG{l+m+mi}{7}\PYG{+w}{ }\PYG{l+m+mi}{7}\PYG{p}{];}
+
+\PYG{n}{h}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n+nb}{ones}\PYG{p}{(}\PYG{n}{wsize}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{/}\PYG{+w}{ }\PYG{n+nb}{prod}\PYG{p}{(}\PYG{n}{wsize}\PYG{p}{);}
+\PYG{n}{Iave}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n}{imfilter}\PYG{p}{(}\PYG{n}{I}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZsq{}replicate\PYGZsq{}}\PYG{p}{);}
+
+\PYG{n}{normDiff}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{I}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{Iave}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{./}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{Iave}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n+nb}{eps}\PYG{p}{);}
+\PYG{n}{normDiff}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n}{normDiff}\PYG{+w}{ }\PYG{o}{.\PYGZca{}}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{;}
+\PYG{n}{Cr}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n+nb}{sqrt}\PYG{p}{(}\PYG{n}{imfilter}\PYG{p}{(}\PYG{n}{normDiff}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZsq{}replicate\PYGZsq{}}\PYG{p}{));}
+
+
+\PYG{c}{\PYGZpc{} 获取统计特征}
+\PYG{n}{stats}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n+nb}{summary}\PYG{p}{(}\PYG{n}{Cr}\PYG{p}{(:));}
+\PYG{n+nb}{disp}\PYG{p}{(}\PYG{l+s}{\PYGZsq{}RMS 对比度统计特征：\PYGZsq{}}\PYG{p}{);}
+\PYG{n+nb}{disp}\PYG{p}{(}\PYG{n}{stats}\PYG{p}{);}
+\PYG{c}{\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{} 1. 使用直方图显示分布情况}
+\PYG{n+nb}{figure}\PYG{p}{;}
+\PYG{n+nb}{histogram}\PYG{p}{(}\PYG{n}{Cr}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZsq{}FaceColor\PYGZsq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{[}\PYG{l+m+mf}{.4}\PYG{+w}{ }\PYG{l+m+mf}{.8}\PYG{+w}{ }\PYG{l+m+mf}{.6}\PYG{p}{],}\PYG{+w}{ }\PYG{l+s}{\PYGZsq{}EdgeColor\PYGZsq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZsq{}none\PYGZsq{}}\PYG{p}{);}\PYG{+w}{ }\PYG{n+nb}{xlabel}\PYG{p}{(}\PYG{l+s}{\PYGZsq{}RMS 对比度\PYGZsq{}}\PYG{p}{);}\PYG{+w}{ }\PYG{n+nb}{ylabel}\PYG{p}{(}\PYG{l+s}{\PYGZsq{}频率\PYGZsq{}}\PYG{p}{);}
+\PYG{n+nb}{title}\PYG{p}{(}\PYG{n+nb}{sprintf}\PYG{p}{(}\PYG{l+s}{\PYGZsq{}RMS 对比度分布情况（wsize=[\PYGZpc{}d \PYGZpc{}d]）\PYGZsq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{wsize}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{),}\PYG{+w}{ }\PYG{n}{wsize}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{)));}
+
+\PYG{c}{\PYGZpc{} 2. 显示热力图}
+\PYG{n+nb}{figure}\PYG{p}{;}
+\PYG{n+nb}{imagesc}\PYG{p}{(}\PYG{n+nb}{reshape}\PYG{p}{(}\PYG{n}{Cr}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nb}{size}\PYG{p}{(}\PYG{n}{I}\PYG{p}{)));}
+\PYG{n}{colormap}\PYG{+w}{ }\PYG{l+s}{pink}\PYG{p}{;}\PYG{+w}{ }\PYG{n+nb}{colorbar}\PYG{p}{;}\PYG{+w}{ }\PYG{n+nb}{title}\PYG{p}{(}\PYG{n+nb}{sprintf}\PYG{p}{(}\PYG{l+s}{\PYGZsq{}RMS 对比度热力图（wsize=[\PYGZpc{}d \PYGZpc{}d]）\PYGZsq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{wsize}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{),}\PYG{+w}{ }\PYG{n}{wsize}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{)));}\PYG{+w}{ }\PYG{n}{axis}\PYG{+w}{ }\PYG{l+s}{image}\PYG{p}{;}
+
+\PYG{c}{\PYGZpc{}\PYGZpc{}}
+\PYG{c}{\PYGZpc{} 3. 利用 RMS 对比度重建图像}
+\PYG{n+nb}{figure}\PYG{p}{;}\PYG{+w}{ }\PYG{n+nb}{imshow}\PYG{p}{(}\PYG{n}{Cr}\PYG{p}{);}
+
+\PYG{c}{\PYGZpc{}\PYGZpc{} 使用 RMS 对比度进行图像增强}
+\PYG{n}{Cr}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n+nb}{rescale}\PYG{p}{(}\PYG{n}{Cr}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{);}
+
+\PYG{n+nb}{alpha}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{l+m+mf}{1.2}\PYG{p}{;}
+\PYG{n+nb}{beta}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{l+m+mf}{1.6}\PYG{p}{;}
+\PYG{n}{gain\PYGZus{}min}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{l+m+mf}{1.0}\PYG{p}{;}
+\PYG{n}{gain\PYGZus{}max}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{l+m+mf}{3.0}\PYG{p}{;}
+\PYG{n}{smooth\PYGZus{}sigma}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{l+m+mf}{1.0}\PYG{p}{;}
+
+\PYG{n}{G}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n+nb}{alpha}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{Cr}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{.\PYGZca{}}\PYG{+w}{ }\PYG{n+nb}{beta}\PYG{p}{;}
+\PYG{n}{G}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n}{imgaussfilt}\PYG{p}{(}\PYG{n}{G}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{smooth\PYGZus{}sigma}\PYG{p}{);}
+\PYG{c}{\PYGZpc{} G = min(max(G, gain\PYGZus{}max), gain\PYGZus{}min);}
+
+\PYG{n}{Ie}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n}{Iave}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{G}\PYG{+w}{ }\PYG{o}{.*}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{I}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{Iave}\PYG{p}{);}
+\PYG{n}{Ie}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n+nb}{min}\PYG{p}{(}\PYG{n+nb}{max}\PYG{p}{(}\PYG{n}{Ie}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{),}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{);}
+
+\PYG{n+nb}{figure}\PYG{p}{;}
+\PYG{n+nb}{imshow}\PYG{p}{(}\PYG{n}{Ie}\PYG{p}{);}
+
+\PYG{n}{f}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n}{restoreColour}\PYG{p}{(}\PYG{n}{I\PYGZus{}coloured}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Ie}\PYG{+w}{ }\PYG{o}{.\PYGZca{}}\PYG{+w}{ }\PYG{l+m+mf}{.6}\PYG{p}{);}
+\PYG{n+nb}{figure}\PYG{p}{;}\PYG{+w}{ }\PYG{n+nb}{imshow}\PYG{p}{(}\PYG{n}{f}\PYG{p}{);}
+\end{Verbatim}

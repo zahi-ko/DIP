@@ -1,0 +1,46 @@
+# Compiled LaTeX files
+*.aux
+*.bbl
+*.blg
+*.dvi
+*.fdb_latexmk
+*.fls
+*.fmt
+*.glo
+*.gls
+*.idx
+*.ilg
+*.ind
+*.ist
+*.lof
+*.log
+*.lot
+*.out
+*.pdf
+*.ps
+*.synctex.gz
+*.toc
+
+# Intermediate files
+*.4ct
+*.4tc
+*.idv
+*.lg
+*.tmp
+*.xref
+
+# Build directories
+build/
+output/
+dist/
+
+# Editor specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS specific
+.DS_Store
+Thumbs.db

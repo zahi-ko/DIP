@@ -1,0 +1,543 @@
+\documentclass[bachelor]{thesis-uestc}
+\usepackage{verbatim}
+\usepackage{amssymb}
+\usepackage{minted}
+
+% \setCJKmonofont{fzhei.ttf}
+\title{数字图像处理课程设计报告}{Course Design Report on Digital Image Processing}
+
+\author{张翔}{Xiang Zhang}
+\advisor{蒲恬\chinesespace 高级工程师}{Tian Pu, Senior Engineer}
+\school{信息与通信工程学院}{School of Information and Communication Engineering}
+\major{通信工程}{Communication Engineering}
+\studentnumber{2023010909015}
+
+\begin{document}
+
+\makecover
+
+\begin{chineseabstract}
+本课程设计以“基于 Weber 对比度的图像增强方法”为主题，旨在综合运用在《数字图像处理》课程中学习到的图像处理理论与编程实践能力，完成一个完整的应用案例。设计过程中，首先对 Weber 对比度的计算与可视化方法进行了研究与探讨，包括采用不同滤波器获取背景、通过直方图、热力图等多种可视化方法展示计算获得的 Weber 对比度等；随后基于计算得到的 Weber 对比度，尝试进行图像增强，获得的结果符合预期目标，验证了设计算法的有效性；最后尝试将算法扩展到 Michelson 对比度和均方根平均值对比度，但与 Weber 对比度相比，图像的增强效果较差。通过本次课程设计，进一步加深了对图像处理理论的理解，提升了编程实现与系统调试的综合能力，为后续更加复杂的实际应用与研究奠定了基础。
+
+
+\chinesekeyword{Weber 对比度，图像增强，Michelson 对比度，均方根平均值对比度，图像滤波}
+\end{chineseabstract}
+
+\begin{englishabstract}
+This course project centres on the theme of "Image Enhancement Methods Based on Weber Contrast", aiming to comprehensively apply the image processing theories and programming skills acquired in the Digital Image Processing course to complete a full-scale application case. During the design process, research and exploration were first conducted on the calculation and visualisation methods for Weber contrast. This included employing various filters to isolate backgrounds and presenting the computed Weber contrast through multiple visualisation techniques such as histograms and heatmaps. Subsequently, based on the computed Weber contrast, attempts were made to enhance the image. The results achieved aligned with the expected objectives, validating the effectiveness of the designed algorithm. Finally, attempts were made to extend the algorithm to Michelson contrast and mean square root contrast. However, compared to Weber contrast, the image enhancement effects were inferior. Through this course design, a deeper understanding of image processing theory was gained, and comprehensive abilities in programming implementation and system debugging were enhanced, laying a foundation for more complex practical applications and research in the future.
+
+\englishkeyword{Weber Contrast, Image Enhancement, Michelson Contrast, Root Mean Square Contrast (RMS Contrast), Image Filtering}
+\end{englishabstract}
+
+\thesistableofcontents
+
+\chapter{绪\hspace{6pt}论}
+
+\section{课题背景与意义}
+随着信息化社会的快速发展，图像已经成为信息获取与传递的重要载体。然而，在图像采集、传输及存储过程中，常常受到环境因素与设备性能的限制，导致结果图像质量不佳、信息模糊。例如，低光照条件下的拍摄环境会导致图像亮度不足、细节缺失；雾霾、雨雪等天气会引入模糊、导致对比度下降；传感器器件的噪声与图像压缩过程中产生的失真则进一步降低了图像质量。这些退化现象不仅影响人类的视觉感知，对计算机视觉系统的后续处理与分析也产生了严重干扰。
+
+在此背景下，图像增强技术应运而生，旨在通过设计算法改善图像的视觉效果，使其符合人眼的感知特性，并增强图像细节，为计算机视觉系统提供更优越的输入数据。
+
+截至目前为止，图像增强技术已在多个领域得到了应用，推动了技术发展。在医学影像中，图像增强技术被用于发现与诊断病灶；在自动驾驶中，增强道路与交通标志的可见性，提高系统的安全性与鲁棒性；在工业质检中，改善缺陷检测的准确性与效率；在深度学习领域，为模型学习提供优质训练数据等等。
+
+综上所述，图像增强技术在理论研究与实际应用中均具有重要意义，不仅改善了图像的视觉表现与信息承载能力，还为医学诊断、智能交通、工业检测等多个关键领域提供了坚实的技术支撑。因此，深入研究图像增强方法，对于推动计算机视觉的发展有着重要价值。\citing{sun2025jiyu}
+
+\section{研究内容与目标}
+本课程设计的主要研究内容为“基于 Weber 对比度的图像增强算法”。从最基本的对比度入手，通过研究分析，探索实现基于对比度的图像增强算法。
+
+\subsection{研究目标}
+具体的研究目标分解如下：
+\begin{enumerate}
+    \item 设计算法，计算给定图像的 Weber 对比度，并设计可视化方法，显示计算得到的 Weber 对比度。
+    \item 探究不同滤波器下的 Weber 对比度差异，并设计方法融合不同的滤波结果。
+    \item 设计算法，基于 Weber 对比度实现图像增强。
+    \item 基于先前的研究，尝试扩展到 Michelson 对比度与均值平方根对比度（Root Mean Square Contrast, RMS Contrast）。
+\end{enumerate}
+
+\subsection{研究内容}
+为实现上述目标，本课程设计将围绕以下核心内容展开：
+\begin{enumerate}
+    \item Weber 对比度的计算与可视化：
+        根据对比度公式进行编程实现，仅针对亮度通道进行计算对比度，随后对结果进行重新着色，并利用直方图等辅助方式对对比度分布进行可视化分析。
+        
+    \item 滤波器参数影响的对比研究：
+        分别构造不同窗宽的高斯滤波器与均值滤波器，以计算对应的 Weber 对比度。直观展示并深入分析不同滤波器尺寸下的结果图像差异，并设计一种图像融合方法将三个不同尺度的结果合并展示。
+
+    \item 基于 Weber 对比度的图像增强算法：
+        从 Weber 对比度的计算公式出发进行算法推导，通过设计一个关于原始像素值$I$和局部均值$\mu$的变换函数$T\left(I,\mu\right)$来构造新的$I_s$，以达到增强对比、凸显细节的目的。
+
+    \item 其他对比度的拓展与比较
+        尝试将算法拓展到 Michelson 对比度和 RMS 对比度。对比分析并显示三者的结果图像，进行讨论。
+\end{enumerate}
+
+\chapter{理论基础与原理分析}
+
+\section{Weber 对比度}
+Weber 对比度的定义如下\citing{peli1990contrast}：
+\begin{equation}
+    \label{weber}
+    C_W\left(x,y\right)=\frac{I\left(x,y\right)-I_s\left(x,y\right)}{I_s\left(x,y\right)}
+\end{equation}
+
+其中，$\left(x,y\right)$代表图像坐标，$C_W$为该点的 Weber 对比度，$I$为像素灰度，$I_s$为以$\left(x,y\right)$为中心的一个领域的灰度平均值，$I_s\left(x,y\right) = I\left(x,y\right) \circledast w\left(x,y\right)$，$\circledast$表示卷积运算，$w$是低通滤波器。
+
+$C_W\left(x,y\right)$的定义式\ref{weber}中，分子部分的$I\left(x,y\right)-I_s\left(x,y\right)$代表目标像素相对于其局部背景的绝对亮度差异，分母部分为局部背景强度，主要作用是将绝对差异进行归一化。由定义式可知，当$C_W > 0$时，表明该点亮度高于背景，为正对比度，而当$C_W < 0$时，该点亮度低于背景，为负对比度。
+
+图像增强的本质是调整图像的对比度分布，使其更加符合人眼的视觉感知特性。显然， Weber 对比度可以为图像增强提供指导作用，因为它直接反映了各个点的对比度情况，说明基于 Weber 对比度进行图像增强是可行且有效的。
+
+\section{滤波器原理}
+
+\subsection{均值滤波器}
+均值滤波器是一种简单的低通滤波器，它在计算局部背景 $I_s$ 时，采用目标像素周围一个 $M \times N$ 窗口内所有像素的算术平均值。对于 $M \times N$ 大小的均值滤波器 $w_{\text{mean}}$，其在离散域的定义为：
+$$w_{\text{mean}}(i,j) = \frac{1}{MN}$$
+均值滤波器的优点是计算简单、速度快，但在平滑图像时，它对邻域内的所有像素赋予相同的权重，容易导致图像边缘信息模糊。
+
+\subsection{高斯滤波器}
+高斯滤波器是另一种常见的低通滤波器，它使用二维高斯函数作为滤波核 $w_{\text{Gaussian}}$。与均值滤波器不同，高斯核的值随着与中心距离的增大而衰减，形成一个高斯曲面 。这使得高斯滤波器在计算局部背景 $I_s$ 时，给予中心像素更高的权重，从而实现了更自然的平滑效果，并能更好地保留图像边缘信息，这与人眼视觉系统的权重分布特性更加接近。
+
+二维高斯滤波器的核 $w_{\text{Gaussian}}$ 在连续域的定义如下：
+$$G(x,y;\sigma) = \frac{1}{2\pi\sigma^2} e^{-\frac{x^2+y^2}{2\sigma^2}}$$
+其中，标准差 $\sigma$ (Sigma) 是高斯滤波器的关键参数，它决定了滤波器的平滑程度和局部背景 $I_s$ 所代表的空间尺度。$\sigma$ 越大，滤波核越宽，平滑效果越强，即局部背景的范围越大。
+
+\section{其他对比度定义}
+\begin{description}
+    \item [Michelson 对比度] 
+        \begin{equation}
+            C_\textit{Michelson} = \frac{I_\text{max}-I_\text{min}}{I_\text{max}+I_\text{min}}
+        \end{equation}
+        式中，$I_{\text{max}}$ 和 $I_{\text{min}}$ 分别是 $\left(x,y\right)$ 为中心的像素的某个邻域中的像素最大值和最小值。
+        
+    \item [RMS 对比度]
+        \begin{equation}
+            C_\textit{RMS} = \sqrt{\frac{1}{M_\Omega}\sum_\Omega \left(\frac{I-\bar{I}}{\bar{I}}\right)^2}
+        \end{equation}
+        式中，$C_{\text{RMS}}$ 为均方根对比度，$I$ 是像素灰度，$\bar{I}$ 是 $\left(x,y\right)$ 的邻域内像素灰度的平均值，$\Omega$ 是以 $\left(x,y\right)$ 为中心的邻域，$M_{\Omega}$ 是邻域内像素总数。
+\end{description}
+
+\chapter{Weber 对比度提取与可视化实现}
+
+\section{提取算法设计}
+首先，对原图像进行滤波得到背景亮度 $I_s$。在获得背景亮度后，Weber 对比度的实际计算公式如下：
+\begin{equation}
+    \label{actual_weber}
+    C_W\left(x,y\right) = \frac{I\left(x,y\right) - I_s\left(x,y\right)}{I_s\left(x,y\right) + \epsilon}
+\end{equation}
+
+与\ref{weber}不同，此处在分母上添加了极小值 $\epsilon$，用于防止分母为零时导致计算错误。该公式反映了当前像素相对于局部背景的相对变化率，能够有效抑制光照带来的低频干扰，突出图像的高频细节。
+
+\section{对比度可视化方法}
+
+\subsection{直方图}
+直方图作为一维概率密度函数的离散近似表示，是图像统计特征分析的重要工具\citing{gonzalez2002digital}。对于 Weber 对比度 $C_W(x,y)$，其直方图定义为：
+\begin{equation}
+    h(r_k) = n_k
+\end{equation}
+其中，$r_k$ 表示第 $k$ 个离散对比度级别，$n_k$ 为图像中对比度值等于 $r_k$ 的像素总数。归一化直方图可表示为：
+\begin{equation}
+    p(r_k) = \frac{n_k}{MN}
+\end{equation}
+式中，$M \times N$ 为图像尺寸，$p(r_k)$ 近似表示对比度值为 $r_k$ 的概率。
+
+通过直方图分析可获取以下统计特征：
+\begin{description}
+    \item[动态范围] 对比度值域 $[C_{\min}, C_{\max}]$ 反映图像局部亮度变化的幅度，动态范围越大表明图像包含更丰富的细节层次；
+    \item[对称性分析] 正对比度（$C_W > 0$）占比 $P_+ = \sum_{r_k>0} p(r_k)$ 与负对比度（$C_W < 0$）占比 $P_- = \sum_{r_k<0} p(r_k)$ 的相对关系，反映图像整体的亮度分布特征；
+    \item[集中趋势] 通过均值 $\mu_C = \sum_k r_k p(r_k)$ 与标准差 $\sigma_C = \sqrt{\sum_k (r_k - \mu_C)^2 p(r_k)}$ 量化对比度的集中程度与离散程度。
+\end{description}
+
+本研究采用 MATLAB 的 \texttt{histogram} 函数构建直方图，并利用 \texttt{summary} 函数提取描述性统计量（最小值、四分位数、中位数、最大值等），为后续增强算法的参数优化提供定量依据。
+
+\subsection{热力图}
+热力图（Heatmap）作为二维标量场可视化的有效手段，通过伪彩色映射技术将数值矩阵转换为符合人眼感知特性的色彩分布图\citing{ware2012information}。对于 Weber 对比度场 $C_W: \Omega \rightarrow \mathbb{R}$（其中 $\Omega \subset \mathbb{R}^2$ 为图像空间域），伪彩色映射可表示为：
+\begin{equation}
+    \mathbf{C}(x,y) = \mathcal{M}\left(\frac{C_W(x,y) - C_{\min}}{C_{\max} - C_{\min}}\right)
+\end{equation}
+其中，$\mathcal{M}: [0,1] \rightarrow \mathbb{R}^3$ 为色彩映射函数（Colormap），将归一化的对比度值映射到 RGB 三维色彩空间。
+
+热力图可视化的实现流程包括：
+\begin{enumerate}
+    \item 对 Weber 对比度矩阵 $C_W \in \mathbb{R}^{M \times N}$ 进行线性归一化，映射至标准区间 $[0,1]$；
+    \item 采用 \texttt{imagesc} 函数实现自适应尺度映射（Scaled Image），其内部采用分段线性插值算法完成像素值到色彩的转换；
+    \item 选用感知均匀色图（如 \texttt{pink}、\texttt{jet} 等）以保证色彩变化的单调性与视觉可辨性；
+    \item 附加色标（Colorbar）建立数值-色彩对应关系的图例，实现定量分析。
+\end{enumerate}
+
+热力图可视化保留了 Weber 对比度的空间拓扑结构，能够直观揭示图像中边缘、纹理等高频成分的空间分布特征。根据人类视觉系统的对比敏感函数（Contrast Sensitivity Function, CSF）\citing{campbell1968application}，高对比度区域（$|C_W| \gg 0$）对应图像的显著性特征，而低对比度区域（$|C_W| \approx 0$）则表征平坦的背景区域。
+
+\subsection{利用 Weber 对比度重建图像}
+Weber 对比度 $C_W(x,y)$ 作为无量纲相对量，其值域为 $(-\infty, +\infty)$，且分布非均匀。为实现可视化，需构建从对比度空间到图像亮度空间的映射函数。本研究采用 HSV（Hue-Saturation-Value）圆柱坐标色彩模型进行重建，该模型将色彩的色相、饱和度与明度解耦，便于独立调制亮度分量\citing{smith1978color}。
+
+设原始彩色图像 $\mathbf{I}_{\text{RGB}} \in [0,1]^{M \times N \times 3}$，其 HSV 表示为 $\mathbf{I}_{\text{HSV}} = \mathcal{T}_{\text{RGB}\rightarrow\text{HSV}}(\mathbf{I}_{\text{RGB}})$，其中 $\mathcal{T}$ 为非线性色彩空间变换算子。重建算法步骤如下：
+
+\begin{enumerate}
+    \item \textbf{色彩空间变换}：利用标准 RGB 到 HSV 的变换公式，分离色相 $H$、饱和度 $S$ 与明度 $V$ 三个独立分量；
+    
+    \item \textbf{对比度归一化}：采用仿射变换将 Weber 对比度映射至 $[0,1]$ 区间：
+    \begin{equation}
+        \tilde{C}_W(x,y) = \frac{C_W(x,y) - C_{\min}}{C_{\max} - C_{\min}}
+    \end{equation}
+    其中 $C_{\min} = \min_{(x,y)} C_W(x,y)$，$C_{\max} = \max_{(x,y)} C_W(x,y)$；
+    
+    \item \textbf{明度通道替换}：保持色相与饱和度不变，用归一化对比度替换明度分量：
+    \begin{equation}
+        \mathbf{I}'_{\text{HSV}} = [H, S, \tilde{C}_W]^T
+    \end{equation}
+    
+    \item \textbf{逆变换至 RGB 空间}：通过逆映射获得重建图像：
+    \begin{equation}
+        \mathbf{I}_w = \mathcal{T}_{\text{HSV}\rightarrow\text{RGB}}(\mathbf{I}'_{\text{HSV}})
+    \end{equation}
+\end{enumerate}
+
+该重建方案的本质是利用对比度作为感知亮度的替代表征，保留原始色度信息的同时凸显局部对比结构。然而，由于 Weber 对比度的分布特性与人眼亮度感知的非线性响应存在偏差，直接重建结果往往呈现对比度压缩或视觉不自然的现象，需引入非线性变换进行感知优化。
+
+\subsubsection{对重建图像实施伽马变换}
+伽马变换（Gamma Correction）源于显示设备的非线性光电响应特性建模，现已广泛应用于图像的感知亮度调整\citing{poynton2012digital}。其数学形式为幂律变换：
+\begin{equation}
+    \label{eq:gamma}
+    I_{\text{out}}(x,y) = I_{\text{in}}(x,y)^{\gamma}, \quad I_{\text{in}}, I_{\text{out}} \in [0,1]
+\end{equation}
+其中，$\gamma$ 为伽马指数。根据韦伯-费希纳定律（Weber-Fechner Law）\citing{fechner1860elemente}，人眼对亮度的感知遵循对数关系，即感知亮度 $L_p$ 与物理亮度 $L$ 满足：
+\begin{equation}
+    L_p = k \log L + C
+\end{equation}
+伽马变换通过幂函数近似该对数响应，当 $\gamma < 1$ 时，变换曲线上凸，扩展低亮度区间的动态范围；当 $\gamma > 1$ 时，曲线下凹，压缩高亮度区间。
+
+对于归一化 Weber 对比度 $\tilde{C}_W \in [0,1]$，应用伽马校正：
+\begin{equation}
+    \hat{C}_W(x,y) = \left[\tilde{C}_W(x,y)\right]^{\gamma}
+\end{equation}
+
+本研究设定 $\gamma = 0.4$（即 $\gamma^{-1} = 2.5$），该参数选择基于以下考量：
+\begin{itemize}
+    \item 根据对比度直方图分布特征，低对比度像素占比较高，需通过 $\gamma < 1$ 扩展其表示空间；
+    \item Stevens 幂律（Stevens' Power Law）\citing{stevens1957psychophysical}指出，亮度感知指数约为 0.33，$\gamma = 0.4$ 与之接近，符合视觉感知模型；
+    \item 经验性地平衡增强效果与噪声放大风险，避免过度增强导致的伪影。
+\end{itemize}
+
+变换后的对比度 $\hat{C}_W$ 替换 HSV 空间的明度分量，经逆变换得到感知优化的重建图像 $\mathbf{I}_{wg}$。伽马变换的优势在于计算复杂度低（单点操作，复杂度 $O(MN)$），且能够依据人类视觉系统的非线性响应特性实现亮度的感知均衡化。
+
+\subsubsection{对重建图像实施直方图均衡化}
+直方图均衡化（Histogram Equalization, HE）是基于概率论的全局对比度增强技术，其理论基础是通过累积分布函数（Cumulative Distribution Function, CDF）变换实现概率密度的均匀化\citing{pizer1987adaptive}。
+
+设归一化 Weber 对比度 $\tilde{C}_W$ 的概率密度函数为 $p_C(r)$，其累积分布函数定义为：
+\begin{equation}
+    F_C(r) = \int_0^r p_C(\xi) \mathrm{d}\xi = P(\tilde{C}_W \leq r)
+\end{equation}
+
+直方图均衡化通过变换函数 $s = T(r) = F_C(r)$ 将原始分布映射至均匀分布。根据概率论中的随机变量变换定理，若 $s = T(r)$ 单调递增且可微，则变换后的概率密度函数为：
+\begin{equation}
+    p_S(s) = p_C(r) \left| \frac{\mathrm{d}r}{\mathrm{d}s} \right| = p_C(r) \cdot \frac{1}{p_C(r)} = 1, \quad s \in [0,1]
+\end{equation}
+即输出 $s$ 服从均匀分布 $\mathcal{U}(0,1)$，从而最大化图像熵：
+\begin{equation}
+    H(S) = -\int_0^1 p_S(s) \log p_S(s) \mathrm{d}s = -\int_0^1 1 \cdot \log 1 \, \mathrm{d}s = 0 \rightarrow \text{最大不确定性}
+\end{equation}
+
+在离散实现中，对于 $L$ 级灰度图像，均衡化变换采用离散累积直方图：
+\begin{equation}
+    s_k = T(r_k) = \sum_{j=0}^{k} p_C(r_j) = \sum_{j=0}^{k} \frac{n_j}{MN}, \quad k=0,1,\ldots,L-1
+\end{equation}
+
+应用于 Weber 对比度重建时，算法流程为：
+\begin{enumerate}
+    \item 对 $\tilde{C}_W$ 构建归一化直方图 $\{p_C(r_k)\}_{k=0}^{L-1}$；
+    \item 计算累积分布函数 $\{F_C(r_k)\}$ 并作为映射表；
+    \item 通过查找表（LUT）变换得到均衡化对比度 $\breve{C}_W(x,y) = F_C[\tilde{C}_W(x,y)]$；
+    \item 以 $\breve{C}_W$ 替换 HSV 明度分量，逆变换得 $\mathbf{I}_{wh}$。
+\end{enumerate}
+
+直方图均衡化的优势在于无需手动参数调节，具有自适应性，其目标函数隐式地最大化对比度量测：
+\begin{equation}
+    \max_{T} \, \mathbb{E}[|T(C_W(x,y)) - T(C_W(x',y'))|]
+\end{equation}
+然而，全局均衡化可能导致局部过增强或欠增强。对于对比度已较为分散的图像，HE 可能引入"灰化"效应（washing-out）\citing{stark2000adaptive}。因此，实践中需结合图像内容特征选择适当的增强策略，或采用自适应直方图均衡化（AHE）、对比度受限自适应直方图均衡化（CLAHE）等改进方法。
+
+\section{实验结果与分析}
+
+\subsection{滤波器对比}
+
+\subsection{窗宽对比}
+
+\subsection{不同窗宽下的滤波结果的融合显示}
+
+\chapter{基于 Weber 对比度的图像增强算法}
+
+\section{增强原理设计}
+
+\section{算法实现步骤}
+
+\section{增强结果与对比分析}
+
+\chapter{扩展性讨论}
+
+\section{扩展到 Michelson 对比度的可行性}
+
+\section{扩展到均值平方根对比度的可行性}
+
+\chapter{结\hspace{6pt}论}
+
+\section{工作总结}
+
+\section{主要创新与贡献}
+
+\section{展望}
+
+\thesisacknowledgement
+致谢
+
+\thesisappendix
+
+\chapter{源代码}
+
+\section{Weber 对比度相关代码}
+\inputminted[
+    linenos,
+    frame=lines,
+    framesep=2mm,
+    fontsize=\footnotesize,
+    breaklines=true,
+    numbersep=5pt
+]{matlab}{./src/weber.m}
+
+\section{Michelson 对比度相关代码}
+\inputminted[
+    linenos,
+    frame=lines,
+    framesep=2mm,
+    fontsize=\footnotesize,
+    breaklines=true,
+    numbersep=5pt
+]{matlab}{./src/michelson.m}
+
+\section{均值平方根对比度相关代码}
+\inputminted[
+    linenos,
+    frame=lines,
+    framesep=2mm,
+    fontsize=\footnotesize,
+    breaklines=true,
+    numbersep=5pt
+]{matlab}{./src/rms.m}
+
+\section{辅助函数代码}
+\inputminted[
+    linenos,
+    frame=lines,
+    framesep=2mm,
+    fontsize=\footnotesize,
+    breaklines=true,
+    numbersep=5pt
+]{matlab}{./src/restoreColour.m}
+
+\thesisbibliography{reference}
+
+\begin{comment}
+\chapter{时域积分方程基础}
+时域积分方程（TDIE）方法作为分析瞬态电磁波动现象最主要的数值算法之一，常用于求解均匀散射体和表面散射体的瞬态电磁散射问题。
+
+\section{时域积分方程的类型}
+
+\section{空间基函数与时间基函数}
+利用数值算法求解时域积分方程，首先需要选取适当的空间基函数与时间基函数对待求感应电流进行离散。
+
+\subsection{空间基函数}
+RWG 基函数是定义在三角形单元上的最具代表性的基函数。它的具体定义如下：
+\begin{equation}
+f_n(\bm{r})=
+\begin{cases}
+\frac{l_n}{2A_n^+}\bm{\rho}_n^+=\frac{l_n}{2A_n^+}(\bm{r}-\bm{r}_+)&\bm{r}\in T_n^+\\
+\frac{l_n}{2A_n^-}\bm{\rho}_n^-=\frac{l_n}{2A_n^-}(\bm{r}_--\bm{r})&\bm{r}\in T_n^-\\
+0&\text{otherwise}
+\end{cases}
+\end{equation}
+
+其中，$l_n$为三角形单元$T_n^+$和$T_n^-$公共边的长度，$A_n^+$和$A_n^-$分别为三角形单元$T_n^+$和$T_n^-$的面积（如图\ref{pica}所示）。
+
+\begin{figure}[h]
+\includegraphics{pica.pdf}
+\caption{RWG 基函数几何参数示意图}
+\label{pica}
+\end{figure}
+
+由于时域混合场积分方程是时域电场积分方程与时域磁场积分方程的线性组合，因此时域混合场积分方程时间步进算法的阻抗矩阵特征与时域电场积分方程时间步进算法的阻抗矩阵特征相同。
+\begin{equation}
+\label{latent_binary_variable}
+\bm{r}_{i,j}=
+\begin{cases}
+1,f(\bm{x}^{i};\bm{w})\cdot f(\bm{x}^{j};\bm{w})\geq u(\lambda),\\
+0,f(\bm{x}^{i};\bm{w})\cdot f(\bm{x}^{j};\bm{w})< l(\lambda), 1\leq i,j\leq n.\\
+f(\bm{x}^{i};\bm{w})\cdot f(\bm{x}^{j};\bm{w}),\text{otherwise},
+\end{cases}
+\end{equation}
+
+时域积分方程时间步进算法的阻抗元素直接影响算法的后时稳定性，因此阻抗元素的计算是算法的关键之一，采用精度高效的方法计算时域阻抗元素是时域积分方程时间步进算法研究的重点之一。
+
+
+\subsection{时间基函数}
+
+\subsubsection{时域方法特有的展开函数}
+
+\subsubsection{频域方法特有的展开函数}
+
+\section{入射波}
+
+如图\ref{picb}和图\ref{picc}所示分别给出了参数$E_0=\hat{x}$，$a_n=-\hat{z}$，$f_0=250MHz$，$f_w=50MHz$，$t_w=4.2\sigma$时，调制高斯脉冲的时域与频域归一化波形图。
+
+\begin{figure}[h]
+\subfloat[]{
+    \label{picb}
+    \includegraphics[width=7.3cm]{picb.pdf}
+}
+\subfloat[]{
+    \label{picc}
+    \includegraphics[width=6.41cm]{picc.pdf}
+}
+\caption{调制高斯脉冲时域与频率波形，时域阻抗元素的存储技术也是时间步进算法并行化的关键技术之一。(a)调制高斯脉冲信号的时域波形；(b)调制高斯脉冲信号的频域波形}
+\label{fig1}
+\end{figure}
+
+时域阻抗元素的存储技术\citing{xiao2012yi}也是时间步进算法并行化的关键技术之一，采用合适的阻抗元素存储方式可以很大的提高并行时间步进算法的计算效率。
+
+\section{本章小结}
+本章首先从时域麦克斯韦方程组出发推导得到了时域电场、磁场以及混合场积分方程。
+
+\chapter{时域积分方程数值方法研究}
+\section{时域积分方程时间步进算法的阻抗元素精确计算}
+时域积分方程时间步进算法的阻抗元素直接影响算法的后时稳定性，因此阻抗元素的计算是算法的关键之一，采用精度高效的方法计算时域阻抗元素是时域积分方程时间步进算法研究的重点之一。
+
+\subsection{时域积分方程时间步进算法产生的阻抗矩阵的特征}
+由于时域混合场积分方程是时域电场积分方程与时域磁场积分方程的线性组合，因此时域混合场积分方程时间步进算法的阻抗矩阵特征与时域电场积分方程时间步进算法的阻抗矩阵特征相同。时域阻抗元素的存储技术也是关键技术之一，采用合适的阻抗元素存储方式可以提高并行算法的计算效率。
+
+\subsection{数值算例与分析}
+由于时域混合场积分方程是时域电场积分方程与时域磁场积分方程的线性组合，因此时域混合场积分方程时间步进算法的阻抗矩阵特征与时域电场积分方程时间步进算法的阻抗矩阵特征相同。
+
+\begin{algorithm}[H]
+    \KwData{this text}
+    \KwResult{how to write algorithm with \LaTeX2e}
+    initialization\;
+    \While{not at end of this document}{
+        read current\;
+        \eIf{understand}{
+            go to next section\;
+            current section becomes this one\;
+        }{
+            go back to the beginning of current section\;
+        }
+    }
+    \caption{How to wirte an algorithm.}
+\end{algorithm}
+
+由于时域混合场积分方程是时域电场积分方程与时域磁场积分方程的线性组合，因此时域混合场积分方程时间步进算法的阻抗矩阵特征与时域电场积分方程时间步进算法的阻抗矩阵特征相同。
+
+\section{时域积分方程时间步进算法矩阵方程的求解}
+
+\section{本章小结}
+本章首先研究了时域积分方程时间步进算法的阻抗元素精确计算技术，分别采用DUFFY变换法与卷积积分精度计算法计算时域阻抗元素，通过算例验证了计算方法的高精度。
+
+\chapter{时域积分方程数值方法研究}
+\section{时域积分方程时间步进算法的阻抗元素精确计算}
+时域积分方程时间步进算法的阻抗元素直接影响算法的后时稳定性，因此阻抗元素的计算是算法的关键之一，采用精度高效的方法计算时域阻抗元素是时域积分方程时间步进算法研究的重点之一。
+
+\section{时域积分方程时间步进算法阻抗矩阵的存储}
+时域阻抗元素的存储技术也是时间步进算法并行化的关键技术之一，采用合适的阻抗元素存储方式可以很大的提高并行时间步进算法的计算效率。
+
+\subsection{时域积分方程时间步进算法产生的阻抗矩阵的特征}
+由于时域混合场积分方程是时域电场积分方程与时域磁场积分方程的线性组合，因此时域混合场积分方程时间步进算法的阻抗矩阵特征与时域电场积分方程时间步进算法的阻抗矩阵特征相同。
+
+\subsection{数值算例与分析}
+如表\ref{tablea}所示给出了时间步长分别取0.4ns、0.5ns、0.6ns 时的三种存储
+方式的存储量大小。
+
+\begin{table}[h]
+\caption{计算$2m\times 2m$理想导体平板时域感应电流采用的三种存储方式的存储量比较。}
+\begin{tabular}{cccc}
+\toprule
+\multirow{2}{*}{时间步长} & \multicolumn{3}{c}{存储方式} \\
+\cmidrule{2-4}
+& 非压缩存储方式 & 完全压缩存储方式 & 基权函数压缩存储方式 \\
+\midrule
+0.4ns & 5.59 MB & 6.78 MB & 6.78 MB\\
+0.5ns & 10.17 MB & 5.58 MB & 5.58 MB \\
+0.6ns & 8.38MB & 4.98 MB & 4.98 MB \\
+\bottomrule
+\end{tabular}
+\label{tablea}
+\end{table}
+
+如图\ref{picd}所示给出了时间步长选取为0.5ns 时采用三种不同存储方式计算的平板中心处$x$方向的感应电流值与IDFT 方法计算结果的比较，……。如图\ref{pice}所示给出了存储方式为基权函数压缩存储方式，时间步长分别取0.4ns、0.5ns、0.6ns时平板中心处$x$方向的感应电流计算结果，从图中可以看出不同时间步长的计算结果基本相同。
+
+\begin{figure}[h]
+\subfloat[]{
+    \label{picd}
+    \includegraphics[width=6.77cm]{picd.pdf}
+}
+\subfloat[]{
+    \label{pice}
+    \includegraphics[width=7.04cm]{pice.pdf}
+}
+\caption{$2m\times 2m$的理想导体平板中心处感应电流$x$分量随时间的变化关系。(a)不同存储方式的计算结果与IDFT方法的结果比较；(b)不同时间步长的计算结果比较比较比较}
+\label{fig2}
+\end{figure}
+
+由于时域混合场积分方程是时域电场积分方程与时域磁场积分方程的线性组合，因此时域混合场积分方程时间步进算法的阻抗矩阵特征与时域电场积分方程时间步进算法的阻抗矩阵特征相同。
+
+\section{时域积分方程时间步进算法矩阵方程的求解}
+\begin{theorem}
+如果时域混合场积分方程是时域电场积分方程与时域磁场积分方程的线性组合。
+\end{theorem}
+\begin{proof}
+由于时域混合场积分方程是时域电场积分方程与时域磁场积分方程的线性组合，因此时域混合场积分方程时间步进算法的阻抗矩阵特征与时域电场积分方程时间步进算法的阻抗矩阵特征相同。
+\end{proof}
+\begin{corollary}
+时域积分方程方法的研究近几年发展迅速，在本文研究工作的基础上，仍有以下方向值得进一步研究。
+\end{corollary}
+\begin{lemma}
+因此时域混合场积分方程时间步进算法的阻抗矩阵特征与时域电场积分方程时间步进算法的阻抗矩阵特征相同。
+\end{lemma}
+
+\section{本章小结}
+本章首先研究了时域积分方程时间步进算法的阻抗元素精确计算技术，分别采用DUFFY 变换法与卷积积分精度计算法计算时域阻抗元素，通过算例验证了计算方法的高精度。
+
+\chapter{全文总结与展望}
+
+\section{全文总结}
+本文以时域积分方程方法为研究背景，主要对求解时域积分方程的时间步进算法以及两层平面波快速算法进行了研究。
+
+\section{后续工作展望}
+时域积分方程方法的研究近几年发展迅速，在本文研究工作的基础上，仍有以下方向值得进一步研究：
+
+\thesisacknowledgement
+在攻读博士学位期间，首先衷心感谢我的导师XXX教授
+
+\thesisappendix
+
+\chapter{中心极限定理的证明}
+
+\section{高斯分布和伯努利实验}
+
+
+% Uncomment to list all the entries of the database.
+% \nocite{*}
+
+\thesisbibliography{reference}
+
+%
+% Uncomment following codes to load bibliography database with native
+% \bibliography command.
+%
+% \nocite{*}
+% \bibliographystyle{thesis-uestc}
+% \bibliography{reference}
+%
+
+\thesisaccomplish{publications}
+
+\thesistranslationoriginal
+\section{The OFDM Model of Multiple Carrier Waves}
+
+\thesistranslationchinese
+\section{基于多载波索引键控的正交频分多路复用系统模型}
+\end{comment}
+
+\end{document}
