@@ -44,3 +44,6 @@ dist/
 # OS specific
 .DS_Store
 Thumbs.db
+
+# minted
+_minted-main/

@@ -2,6 +2,7 @@
 \usepackage{verbatim}
 \usepackage{amssymb}
 \usepackage{minted}
+\usepackage{booktabs}
 
 % \setCJKmonofont{fzhei.ttf}
 \title{数字图像处理课程设计报告}{Course Design Report on Digital Image Processing}
@@ -133,8 +134,23 @@ $$G(x,y;\sigma) = \frac{1}{2\pi\sigma^2} e^{-\frac{x^2+y^2}{2\sigma^2}}$$
 
 与式\ref{weber}不同，此处在分母上添加了极小值 $\epsilon$，用于防止分母为零时导致计算错误。该公式反映了当前像素相对于局部背景的相对变化率，能够有效抑制光照带来的低频干扰，突出图像的高频细节。
 
-计算得到 Weber 对比度后，利用 \texttt{summary} 函数提取描述性统计量（最小值、四分位数、中位数、最大值等），为后续增强算法的参数优化提供定量依据。结果如下：
-% TODO 在这里插入表格显示结果
+计算得到 Weber 对比度后，利用 \texttt{summary} 函数提取描述性统计量（最小值、中位数、最大值等），为后续增强算法的参数优化提供定量依据。从表\ref{tab:summary_stats}中 Weber 对比度的统计数据可以看出，其取值范围分布较广，最小值达到 $-1.0000$，最大值则高达 $13.8949$，这表明图像中既存在比背景暗得多的区域，也存在显著亮于背景的细节特征。中位数（$-0.1083$）和平均值（$-0.0599$）均略小于零，反映出图像中大部分区域的亮度略低于局部背景均值。此外，较大的标准差（$0.5831$）体现了对比度分布的离散性，为后续通过非线性变换增强图像细节提供了充足的调整空间。
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{l c c c}
+        \toprule
+        \textbf{统计特征} & \textbf{Weber} & \textbf{Michelson} & \textbf{RMS} \\
+        \midrule
+        最小值 (Min) & $-1.0000$ & $0.0000$ & $0.0000$ \\
+        中位数 (Median) & $-0.1083$ & $0.6471$ & $0.2681$ \\
+        最大值 (Max) & $13.8949$ & $1.0000$ & $1.9457$ \\
+        平均值 (Mean) & $-0.0599$ & $0.6184$ & $0.2980$ \\
+        标准差 (Std Dev) & $0.5831$ & $0.2982$ & $0.1989$ \\
+        \bottomrule
+    \end{tabular}
+    \caption{各个对比度的统计特征}
+    \label{tab:summary_stats}
+\end{table}
 
 \section{对比度可视化方法}
 
@@ -155,8 +171,13 @@ $$G(x,y;\sigma) = \frac{1}{2\pi\sigma^2} e^{-\frac{x^2+y^2}{2\sigma^2}}$$
     \item[对称性分析] 正对比度（$C_W > 0$）占比 $P_+ = \sum_{r_k>0} p(r_k)$ 与负对比度（$C_W < 0$）占比 $P_- = \sum_{r_k<0} p(r_k)$ 的相对关系，反映图像整体的亮度分布特征；
 \end{description}
 
-本课程设计采用 MATLAB 的 \texttt{histogram} 函数构建直方图，结果如图\ref{histo_w}所示。
-% TODO 分析直方图
+本课程设计采用 MATLAB 的 \texttt{histogram} 函数构建直方图，结果如图\ref{fig:histo_w}所示。
+\begin{figure}[hbt]
+    \centering
+    \includegraphics[width=0.8\textwidth]{pic/weber_histo.pdf}
+    \caption{Weber 对比度直方图}
+    \label{fig:histo_w}
+\end{figure}
 
 \subsection{热力图}
 热力图（Heatmap）作为二维标量场可视化的有效手段，通过伪彩色映射技术将数值矩阵转换为符合人眼感知特性的色彩分布图\citing{ware2012information}。对于 Weber 对比度场 $C_W: \Omega \rightarrow \mathbb{R}$（其中 $\Omega \subset \mathbb{R}^2$ 为图像空间域），伪彩色映射可表示为：

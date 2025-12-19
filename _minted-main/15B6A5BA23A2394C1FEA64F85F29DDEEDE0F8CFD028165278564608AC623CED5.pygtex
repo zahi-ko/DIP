@@ -1,8 +1,0 @@
-\begin{Verbatim}[commandchars=\\\{\}]
-\PYG{k}{function}\PYG{+w}{ }recoverd\PYGZus{}img\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n+nf}{restoreColour}\PYG{p}{(}img, weber\PYG{p}{)}
-\PYG{+w}{    }\PYG{n}{recoverd\PYGZus{}img}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n+nb}{rgb2hsv}\PYG{p}{(}\PYG{n}{img}\PYG{p}{);}
-\PYG{+w}{    }\PYG{n}{recoverd\PYGZus{}img}\PYG{p}{(:,}\PYG{+w}{ }\PYG{p}{:,}\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n}{weber}\PYG{p}{;}
-\PYG{+w}{    }\PYG{n}{recoverd\PYGZus{}img}\PYG{p}{(:,}\PYG{+w}{ }\PYG{p}{:,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n}{recoverd\PYGZus{}img}\PYG{p}{(:,}\PYG{+w}{ }\PYG{p}{:,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{l+m+mf}{1.2}\PYG{p}{;}
-\PYG{+w}{    }\PYG{n}{recoverd\PYGZus{}img}\PYG{+w}{ }\PYG{p}{=}\PYG{+w}{ }\PYG{n+nb}{hsv2rgb}\PYG{p}{(}\PYG{n}{recoverd\PYGZus{}img}\PYG{p}{);}
-\PYG{k}{end}
-\end{Verbatim}
