@@ -115,6 +115,14 @@ $$G(x,y;\sigma) = \frac{1}{2\pi\sigma^2} e^{-\frac{x^2+y^2}{2\sigma^2}}$$
 \end{description}
 
 \chapter{Weber 对比度提取与可视化实现}
+实验中使用的图片如图\ref{test}所示。
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{pic/test_img.pdf}
+    \caption{测试图像}
+    \label{test}
+\end{figure}
 
 \section{提取算法设计}
 首先，对原图像进行滤波得到背景亮度 $I_s$。在获得背景亮度后，Weber 对比度的实际计算公式如下：
@@ -123,7 +131,10 @@ $$G(x,y;\sigma) = \frac{1}{2\pi\sigma^2} e^{-\frac{x^2+y^2}{2\sigma^2}}$$
     C_W\left(x,y\right) = \frac{I\left(x,y\right) - I_s\left(x,y\right)}{I_s\left(x,y\right) + \epsilon}
 \end{equation}
 
-与\ref{weber}不同，此处在分母上添加了极小值 $\epsilon$，用于防止分母为零时导致计算错误。该公式反映了当前像素相对于局部背景的相对变化率，能够有效抑制光照带来的低频干扰，突出图像的高频细节。
+与式\ref{weber}不同，此处在分母上添加了极小值 $\epsilon$，用于防止分母为零时导致计算错误。该公式反映了当前像素相对于局部背景的相对变化率，能够有效抑制光照带来的低频干扰，突出图像的高频细节。
+
+计算得到 Weber 对比度后，利用 \texttt{summary} 函数提取描述性统计量（最小值、四分位数、中位数、最大值等），为后续增强算法的参数优化提供定量依据。结果如下：
+% TODO 在这里插入表格显示结果
 
 \section{对比度可视化方法}
 
@@ -142,10 +153,10 @@ $$G(x,y;\sigma) = \frac{1}{2\pi\sigma^2} e^{-\frac{x^2+y^2}{2\sigma^2}}$$
 \begin{description}
     \item[动态范围] 对比度值域 $[C_{\min}, C_{\max}]$ 反映图像局部亮度变化的幅度，动态范围越大表明图像包含更丰富的细节层次；
     \item[对称性分析] 正对比度（$C_W > 0$）占比 $P_+ = \sum_{r_k>0} p(r_k)$ 与负对比度（$C_W < 0$）占比 $P_- = \sum_{r_k<0} p(r_k)$ 的相对关系，反映图像整体的亮度分布特征；
-    \item[集中趋势] 通过均值 $\mu_C = \sum_k r_k p(r_k)$ 与标准差 $\sigma_C = \sqrt{\sum_k (r_k - \mu_C)^2 p(r_k)}$ 量化对比度的集中程度与离散程度。
 \end{description}
 
-本研究采用 MATLAB 的 \texttt{histogram} 函数构建直方图，并利用 \texttt{summary} 函数提取描述性统计量（最小值、四分位数、中位数、最大值等），为后续增强算法的参数优化提供定量依据。
+本课程设计采用 MATLAB 的 \texttt{histogram} 函数构建直方图，结果如图\ref{histo_w}所示。
+% TODO 分析直方图
 
 \subsection{热力图}
 热力图（Heatmap）作为二维标量场可视化的有效手段，通过伪彩色映射技术将数值矩阵转换为符合人眼感知特性的色彩分布图\citing{ware2012information}。对于 Weber 对比度场 $C_W: \Omega \rightarrow \mathbb{R}$（其中 $\Omega \subset \mathbb{R}^2$ 为图像空间域），伪彩色映射可表示为：
@@ -158,11 +169,11 @@ $$G(x,y;\sigma) = \frac{1}{2\pi\sigma^2} e^{-\frac{x^2+y^2}{2\sigma^2}}$$
 \begin{enumerate}
     \item 对 Weber 对比度矩阵 $C_W \in \mathbb{R}^{M \times N}$ 进行线性归一化，映射至标准区间 $[0,1]$；
     \item 采用 \texttt{imagesc} 函数实现自适应尺度映射（Scaled Image），其内部采用分段线性插值算法完成像素值到色彩的转换；
-    \item 选用感知均匀色图（如 \texttt{pink}、\texttt{jet} 等）以保证色彩变化的单调性与视觉可辨性；
+    \item 选用感知均匀色图（实验中采取的为 \texttt{pink}）以保证色彩变化的单调性与视觉可辨性；
     \item 附加色标（Colorbar）建立数值-色彩对应关系的图例，实现定量分析。
 \end{enumerate}
 
-热力图可视化保留了 Weber 对比度的空间拓扑结构，能够直观揭示图像中边缘、纹理等高频成分的空间分布特征。根据人类视觉系统的对比敏感函数（Contrast Sensitivity Function, CSF）\citing{campbell1968application}，高对比度区域（$|C_W| \gg 0$）对应图像的显著性特征，而低对比度区域（$|C_W| \approx 0$）则表征平坦的背景区域。
+热力图可视化保留了 Weber 对比度的空间拓扑结构，能够直观揭示图像中边缘、纹理等高频成分的空间分布特征。高对比度区域（$|C_W| \gg 0$）对应图像的显著性特征，而低对比度区域（$|C_W| \approx 0$）则表征平坦的背景区域。
 
 \subsection{利用 Weber 对比度重建图像}
 Weber 对比度 $C_W(x,y)$ 作为无量纲相对量，其值域为 $(-\infty, +\infty)$，且分布非均匀。为实现可视化，需构建从对比度空间到图像亮度空间的映射函数。本研究采用 HSV（Hue-Saturation-Value）圆柱坐标色彩模型进行重建，该模型将色彩的色相、饱和度与明度解耦，便于独立调制亮度分量\citing{smith1978color}。
