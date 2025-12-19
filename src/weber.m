@@ -1,7 +1,7 @@
-close all; clc; clear;
+% close all; clc; clear;
 
 %% 读取图像
-I = imread("1.jpeg");
+I = imread("9.jpg");
 I_coloured = I;
 
 if size(I, 3) == 3
@@ -77,7 +77,7 @@ I_hsv(:, :, 3) = histeq(Cw_disp);
 Iwh = hsv2rgb(I_hsv);
 
 figure; imshow(Iw); title(sprintf('Weber 对比度重建结果（%s，%d）', fname, window_width));
-figure; imshow(Iwg); title(sprintf('伽马变换后的 Weber 对比度重建结果（%s，%d）', fname, window_width));
+figure; imshow(Iwg); title(sprintf('伽马变换后的 Weber 对比度重建结果（%s，%d，gamma=%0.1f）', fname, window_width, gamma));
 figure; imshow(Iwh); title(sprintf('直方图均衡化后的 Weber 对比度重建结果（%s，%d）', fname, window_width));
 
 %% 使用 Weber 对比度进行图像增强

@@ -1,7 +1,7 @@
 close all; clc; clear;
 
 %% 读取图像
-I = imread("1.jpeg");
+I = imread("9.jpg");
 I_coloured = I;
 
 if size(I, 3) == 3
@@ -105,14 +105,17 @@ end
 % I_enhanced = I_enhanced_sum ./ I_count;
 I_eg = I_enhanced .^ gamma;
 %%
-figure; 
-subplot(211); imshow(I); title('原图');
-subplot(212); imshow(I_enhanced); title('增强后');
+% figure; 
+% subplot(211); imshow(I); title('原图');
+% subplot(212); imshow(I_enhanced); title('增强后');
 
-I_ec = restoreColour(I_coloured, I_enhanced .^ .6);
+gamma = .6;
+
+I_ec = restoreColour(I_coloured, I_enhanced .^ gamma);
 figure;
-subplot(211); imshow(I_coloured);
-subplot(212); imshow(I_ec);
+imshow(I_ec); title('Michelson 对比度图像增强结果');
+% subplot(211); imshow(I_coloured);
+% subplot(212); imshow(I_ec);
 
 %% 判断是否越界
 function [r_start, r_end, c_start, c_end] = get_valid_range(i, j, m, n, rows, cols)

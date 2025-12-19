@@ -1,7 +1,7 @@
 close all; clc; clear;
 
 %% 读取图像
-I = imread("1.jpeg");
+I = imread("9.jpg");
 I_coloured = I;
 
 if size(I, 3) == 3
@@ -40,7 +40,7 @@ colormap pink; colorbar; title(sprintf('RMS 对比度热力图（wsize=[%d %d]�
 
 %%
 % 3. 利用 RMS 对比度重建图像
-figure; imshow(Cr);
+figure; imshow(Cr); title('RMS 对比度重建图像结果');
 
 %% 使用 RMS 对比度进行图像增强
 Cr = rescale(Cr, 0, 1);
@@ -58,8 +58,8 @@ G = imgaussfilt(G, smooth_sigma);
 Ie = Iave + G .* (I - Iave);
 Ie = min(max(Ie, 0), 1);
 
-figure;
-imshow(Ie);
+% figure;
+% imshow(Ie); 
 
 f = restoreColour(I_coloured, Ie .^ .6);
-figure; imshow(f);
+figure; imshow(f); title('RMS 对比度图像增强结果');
