@@ -116,6 +116,8 @@ $$G(x,y;\sigma) = \frac{1}{2\pi\sigma^2} e^{-\frac{x^2+y^2}{2\sigma^2}}$$
 \end{description}
 
 \chapter{Weber 对比度提取与可视化实现}
+\label{cha:3}
+
 实验中使用的图片如图\ref{fig:test}所示，使用窗宽为 $71x71$ 的高斯滤波器。
 
 \begin{figure}[h]
@@ -386,9 +388,48 @@ Weber 对比度的核心在于对局部背景 $I_s$ 的估计。背景的计算�
 \label{cha:4}
 \section{增强原理设计}
 
+基于式\ref{actual_weber}得到的 Weber 对比度 $C_W(x,y)$，我们设计一个同时考虑局部对比度的非线性增强项与背景照度的感知校正项的组合变换，以兼顾细节强化与视觉舒适度：
+\begin{equation}
+    \label{eq:enh_transform}
+    I_{\text{out}}(x,y) = I_s(x,y)^{\gamma}\,\Big(1 + \beta\cdot\operatorname{sgn}(C_W)\cdot |C_W(x,y)|^{\alpha}\Big), \quad \gamma>0,\ \alpha>0,\ \beta\in(0,1]
+\end{equation}
+其中 $I_s$ 为局部背景（低通分量），$\gamma$ 为感知亮度校正指数，$\alpha$ 为对比度的非线性强化指数，$\beta$ 为强度缩放因子。该设计遵循以下原则：
+\begin{itemize}
+    \item \textbf{感知一致性（$\gamma$）}：$I_s^{\gamma}$ 模拟显示体系与人眼的非线性响应（参见式\ref{eq:gamma}与文献\citing{poynton2012digital}），$\gamma<1$ 时扩展暗区动态范围、抑制过曝；$\gamma>1$ 时压缩高亮区域。
+    \item \textbf{边缘/纹理强化（$\alpha$）}：$|C_W|^{\alpha}$ 为幂律抑制小对比度、相对提升中高对比度的非线性映射，$\alpha\in(0,1]$ 有助于降低噪声放大风险。
+    \item \textbf{强度可控（$\beta$）}：缩放系数 $\beta$ 保证增强幅度受控，便于在不同场景下平衡细节显著性与伪影风险。
+\end{itemize}
+为保证输出的物理可行性与显示稳定性，对 $I_{\text{out}}$ 施加区间裁剪：
+\begin{equation}
+    \label{eq:clip}
+    I_{\text{out}} \leftarrow \min\big\{1,\ \max\{0,\ I_{\text{out}}\}\big\},\quad I\in[0,1]\ \Rightarrow\ I_{\text{out}}\in[0,1]
+\end{equation}
+实际显示采用 HSV 映射：将原始彩色图的 HSV 表示中 V 通道替换为 $I_{\text{out}}$，再逆变换到 RGB 空间。该策略保留原色相与饱和度，仅调整明度，从而避免色彩失真。
+
 \section{算法实现步骤}
 
+结合第\ref{cha:3}章的处理流程，完整的增强算法如下：
+\begin{enumerate}
+    \item \textbf{读取与预处理}：读取彩色图像并获得灰度 $I\in[0,1]$；若为彩色则保留原彩色图用于后续 HSV 映射。
+    \item \textbf{背景估计}：选取滤波器与参数（推荐高斯核，窗宽 $w=71$，$\sigma\approx(w-1)/6$），计算 $I_s=I\circledast G(\sigma)$。
+    \item \textbf{对比度计算}：按式\ref{actual_weber}计算 $C_W=(I-I_s)/(I_s+\epsilon)$，并提取统计量用于参数参考（参见表\ref{tab:summary_stats}）。
+    \item \textbf{非线性对比度映射}：$C_W^{\text{new}}=\beta\cdot\operatorname{sgn}(C_W)\cdot |C_W|^{\alpha}$，其中 $\alpha\approx0.8$、$\beta\approx0.85$ 为经验值。
+    \item \textbf{照度感知校正}：$I_s^{\text{new}}=I_s^{\gamma}$，推荐 $\gamma\approx0.4$ 以扩展暗区动态范围。
+    \item \textbf{合成与裁剪}：按式\ref{eq:enh_transform}得到 $I_{\text{out}}=I_s^{\text{new}}\cdot(1+C_W^{\text{new}})$，再依式\ref{eq:clip}裁剪至 $[0,1]$。
+    \item \textbf{颜色恢复与显示}：将原图转换到 HSV，将 V 通道替换为 $I_{\text{out}}$，逆变换得到增强后的彩色图像。
+\end{enumerate}
+复杂度方面，核心为卷积与逐点幂律/乘加运算，总体为 $O(MN)$（固定核大小）或 $O(MN\log N)$（频域实现）。参数选择可参照 $C_W$ 的直方图与统计量：当暗区占比高且噪声偏大，取较小 $\beta$ 与较大 $\gamma$；当边缘不够显著，适当提高 $\beta$ 或减小 $\alpha$ 的抑制力度。
+
 \section{增强结果与对比分析}
+
+在典型自然场景与低照度图像上，采用 $w=71$、$\sigma\approx(w-1)/6$、$\alpha=0.8$、$\beta=0.85$、$\gamma=0.4$ 的配置具有较好的通用性。综合表现如下：
+\begin{itemize}
+    \item \textbf{暗区改善}：$\gamma<1$ 扩展了 V 通道的暗部动态范围，细节显著提升，整体亮度更均衡（与第\ref{ssec:histo}节直方图分析一致）。
+    \item \textbf{边缘与纹理}：$|C_W|^{\alpha}$ 强化了中高对比度结构，边缘更清晰、纹理更具层次；相较直接线性缩放，噪声放大显著降低。
+    \item \textbf{伪影控制}：在强边缘与高反差区域，$\beta\in(0,1]$ 有效抑制 halo 与过增强；当出现蓝通道主导的大尺度过校正（参见融合显示分析），可适当减小窗宽或引入边缘保护滤波（如引导滤波）。
+    \item \textbf{色彩稳定}：HSV 的 V 替换策略避免了色相偏移，主观色彩更稳定；如需进一步提升观感，可在 $I_{\text{out}}$ 上应用受限对比度的自适应直方图均衡（CLAHE）\citing{pizer1987adaptive}，但应避免过度增强导致的噪声曝光。
+\end{itemize}
+与第\ref{cha:3}章的两种重建增强（伽马变换与全局直方图均衡化）相比，式\ref{eq:enh_transform} 的组合模型在保留细节、控制噪声与维持整体亮度方面更为平衡：其以局部对比度为导向、以背景照度为锚点进行调节，能够更贴合人眼对亮度与对比度的联合感知特性。此外，该模型参数具有明确的物理/感知含义，便于根据直方图与场景内容进行快速调优。
 
 \chapter{扩展性讨论}
 
