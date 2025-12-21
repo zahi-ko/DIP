@@ -16,7 +16,7 @@
 *.log
 *.lot
 *.out
-*.pdf
+# *.pdf
 *.ps
 *.synctex.gz
 *.toc
@@ -49,3 +49,6 @@ Thumbs.db
 _minted-main/
 *.pygstyle
 *.pygtex
+
+# assets
+pic/
