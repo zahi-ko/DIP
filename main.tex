@@ -408,28 +408,35 @@ Weber 对比度的核心在于对局部背景 $I_s$ 的估计。背景的计算�
 
 \section{算法实现步骤}
 
-结合第\ref{cha:3}章的处理流程，完整的增强算法如下：
+结合\ref{cha:3}章的处理流程，完整的增强算法如下：
 \begin{enumerate}
-    \item \textbf{读取与预处理}：读取彩色图像并获得灰度 $I\in[0,1]$；若为彩色则保留原彩色图用于后续 HSV 映射。
-    \item \textbf{背景估计}：选取滤波器与参数（推荐高斯核，窗宽 $w=71$，$\sigma\approx(w-1)/6$），计算 $I_s=I\circledast G(\sigma)$。
+    \item \textbf{读取与预处理}：读取彩色图像并获得灰度 $I\in[0,1]$，保留原彩色图用于后续 HSV 映射。
+    \item \textbf{背景估计}：选取滤波器与参数（推荐高斯核，窗宽 $w=71$，$\sigma=\lfloor(w-1)/6\rfloor$），计算 $I_s=I\circledast G(\sigma)$。
     \item \textbf{对比度计算}：按式\ref{actual_weber}计算 $C_W=(I-I_s)/(I_s+\epsilon)$，并提取统计量用于参数参考（参见表\ref{tab:summary_stats}）。
-    \item \textbf{非线性对比度映射}：$C_W^{\text{new}}=\beta\cdot\operatorname{sgn}(C_W)\cdot |C_W|^{\alpha}$，其中 $\alpha\approx0.8$、$\beta\approx0.85$ 为经验值。
-    \item \textbf{照度感知校正}：$I_s^{\text{new}}=I_s^{\gamma}$，推荐 $\gamma\approx0.4$ 以扩展暗区动态范围。
+    \item \textbf{非线性对比度映射}：$C_W^{\text{new}}=\beta\cdot\operatorname{sgn}(C_W)\cdot |C_W|^{\alpha}$，其中 $\alpha=0.8$、$\beta=0.85$ 为经验值。
+    \item \textbf{照度感知校正}：$I_s^{\text{new}}=I_s^{\gamma}$，推荐 $\gamma=0.4$ 以扩展暗区动态范围。
     \item \textbf{合成与裁剪}：按式\ref{eq:enh_transform}得到 $I_{\text{out}}=I_s^{\text{new}}\cdot(1+C_W^{\text{new}})$，再依式\ref{eq:clip}裁剪至 $[0,1]$。
     \item \textbf{颜色恢复与显示}：将原图转换到 HSV，将 V 通道替换为 $I_{\text{out}}$，逆变换得到增强后的彩色图像。
 \end{enumerate}
-复杂度方面，核心为卷积与逐点幂律/乘加运算，总体为 $O(MN)$（固定核大小）或 $O(MN\log N)$（频域实现）。参数选择可参照 $C_W$ 的直方图与统计量：当暗区占比高且噪声偏大，取较小 $\beta$ 与较大 $\gamma$；当边缘不够显著，适当提高 $\beta$ 或减小 $\alpha$ 的抑制力度。
+
+复杂度方面，核心为卷积与逐点幂律/乘加运算，总体为 $O(MN)$（固定核大小）。参数选择可参照 $C_W$ 的直方图与统计量：当暗区占比高且噪声偏大，取较小 $\beta$ 与较大 $\gamma$；当边缘不够显著，适当提高 $\beta$ 或减小 $\alpha$ 的抑制力度。
 
 \section{增强结果与对比分析}
 
-在典型自然场景与低照度图像上，采用 $w=71$、$\sigma\approx(w-1)/6$、$\alpha=0.8$、$\beta=0.85$、$\gamma=0.4$ 的配置具有较好的通用性。综合表现如下：
+在典型自然场景与低照度图像上，采用 $w=71$、$\sigma=\lfloor(w-1)/6\rfloor$、$\alpha=0.8$、$\beta=0.85$、$\gamma=0.4$ 的配置具有较好的通用性。结果如图\ref{fig:w_res}，综合表现如下：
 \begin{itemize}
     \item \textbf{暗区改善}：$\gamma<1$ 扩展了 V 通道的暗部动态范围，细节显著提升，整体亮度更均衡（与第\ref{ssec:histo}节直方图分析一致）。
     \item \textbf{边缘与纹理}：$|C_W|^{\alpha}$ 强化了中高对比度结构，边缘更清晰、纹理更具层次；相较直接线性缩放，噪声放大显著降低。
-    \item \textbf{伪影控制}：在强边缘与高反差区域，$\beta\in(0,1]$ 有效抑制 halo 与过增强；当出现蓝通道主导的大尺度过校正（参见融合显示分析），可适当减小窗宽或引入边缘保护滤波（如引导滤波）。
-    \item \textbf{色彩稳定}：HSV 的 V 替换策略避免了色相偏移，主观色彩更稳定；如需进一步提升观感，可在 $I_{\text{out}}$ 上应用受限对比度的自适应直方图均衡（CLAHE）\citing{pizer1987adaptive}，但应避免过度增强导致的噪声曝光。
+    \item \textbf{色彩稳定}：HSV 的 V 替换策略避免了色相偏移，主观色彩更稳定。
 \end{itemize}
-与第\ref{cha:3}章的两种重建增强（伽马变换与全局直方图均衡化）相比，式\ref{eq:enh_transform} 的组合模型在保留细节、控制噪声与维持整体亮度方面更为平衡：其以局部对比度为导向、以背景照度为锚点进行调节，能够更贴合人眼对亮度与对比度的联合感知特性。此外，该模型参数具有明确的物理/感知含义，便于根据直方图与场景内容进行快速调优。
+
+与\ref{cha:3}章的两种重建增强（伽马变换与全局直方图均衡化）相比，式\ref{eq:enh_transform} 的组合模型在保留细节、控制噪声与维持整体亮度方面更为平衡，同时，在图\ref{fig:w_histoeq}中出现的块状失真也得到了显著改善。本方法以局部对比度为导向、以背景照度为锚点进行调节，能够更贴合人眼对亮度与对比度的联合感知特性。此外，该模型参数具有明确的物理/感知含义，便于根据直方图与场景内容进行快速调优。
+
+\begin{figure}[hbt]
+    \includegraphics[width=\textwidth, trim=0cm 7cm 0cm 7cm, clip]{./pic/weber_res.pdf}
+    \caption{使用 Weber 对比度进行图像增强的结果}
+    \label{fig:w_res}
+\end{figure}
 
 \chapter{扩展性讨论}
 
@@ -493,213 +500,5 @@ Weber 对比度的核心在于对局部背景 $I_s$ 的估计。背景的计算�
 ]{matlab}{./src/restoreColour.m}
 
 \thesisbibliography{reference}
-
-\begin{comment}
-\chapter{时域积分方程基础}
-时域积分方程（TDIE）方法作为分析瞬态电磁波动现象最主要的数值算法之一，常用于求解均匀散射体和表面散射体的瞬态电磁散射问题。
-
-\section{时域积分方程的类型}
-
-\section{空间基函数与时间基函数}
-利用数值算法求解时域积分方程，首先需要选取适当的空间基函数与时间基函数对待求感应电流进行离散。
-
-\subsection{空间基函数}
-RWG 基函数是定义在三角形单元上的最具代表性的基函数。它的具体定义如下：
-\begin{equation}
-f_n(\bm{r})=
-\begin{cases}
-\frac{l_n}{2A_n^+}\bm{\rho}_n^+=\frac{l_n}{2A_n^+}(\bm{r}-\bm{r}_+)&\bm{r}\in T_n^+\\
-\frac{l_n}{2A_n^-}\bm{\rho}_n^-=\frac{l_n}{2A_n^-}(\bm{r}_--\bm{r})&\bm{r}\in T_n^-\\
-0&\text{otherwise}
-\end{cases}
-\end{equation}
-
-其中，$l_n$为三角形单元$T_n^+$和$T_n^-$公共边的长度，$A_n^+$和$A_n^-$分别为三角形单元$T_n^+$和$T_n^-$的面积（如图\ref{pica}所示）。
-
-\begin{figure}[h]
-\includegraphics{pica.pdf}
-\caption{RWG 基函数几何参数示意图}
-\label{pica}
-\end{figure}
-
-由于时域混合场积分方程是时域电场积分方程与时域磁场积分方程的线性组合，因此时域混合场积分方程时间步进算法的阻抗矩阵特征与时域电场积分方程时间步进算法的阻抗矩阵特征相同。
-\begin{equation}
-\label{latent_binary_variable}
-\bm{r}_{i,j}=
-\begin{cases}
-1,f(\bm{x}^{i};\bm{w})\cdot f(\bm{x}^{j};\bm{w})\geq u(\lambda),\\
-0,f(\bm{x}^{i};\bm{w})\cdot f(\bm{x}^{j};\bm{w})< l(\lambda), 1\leq i,j\leq n.\\
-f(\bm{x}^{i};\bm{w})\cdot f(\bm{x}^{j};\bm{w}),\text{otherwise},
-\end{cases}
-\end{equation}
-
-时域积分方程时间步进算法的阻抗元素直接影响算法的后时稳定性，因此阻抗元素的计算是算法的关键之一，采用精度高效的方法计算时域阻抗元素是时域积分方程时间步进算法研究的重点之一。
-
-
-\subsection{时间基函数}
-
-\subsubsection{时域方法特有的展开函数}
-
-\subsubsection{频域方法特有的展开函数}
-
-\section{入射波}
-
-如图\ref{picb}和图\ref{picc}所示分别给出了参数$E_0=\hat{x}$，$a_n=-\hat{z}$，$f_0=250MHz$，$f_w=50MHz$，$t_w=4.2\sigma$时，调制高斯脉冲的时域与频域归一化波形图。
-
-\begin{figure}[h]
-\subfloat[]{
-    \label{picb}
-    \includegraphics[width=7.3cm]{picb.pdf}
-}
-\subfloat[]{
-    \label{picc}
-    \includegraphics[width=6.41cm]{picc.pdf}
-}
-\caption{调制高斯脉冲时域与频率波形，时域阻抗元素的存储技术也是时间步进算法并行化的关键技术之一。(a)调制高斯脉冲信号的时域波形；(b)调制高斯脉冲信号的频域波形}
-\label{fig1}
-\end{figure}
-
-时域阻抗元素的存储技术\citing{xiao2012yi}也是时间步进算法并行化的关键技术之一，采用合适的阻抗元素存储方式可以很大的提高并行时间步进算法的计算效率。
-
-\section{本章小结}
-本章首先从时域麦克斯韦方程组出发推导得到了时域电场、磁场以及混合场积分方程。
-
-\chapter{时域积分方程数值方法研究}
-\section{时域积分方程时间步进算法的阻抗元素精确计算}
-时域积分方程时间步进算法的阻抗元素直接影响算法的后时稳定性，因此阻抗元素的计算是算法的关键之一，采用精度高效的方法计算时域阻抗元素是时域积分方程时间步进算法研究的重点之一。
-
-\subsection{时域积分方程时间步进算法产生的阻抗矩阵的特征}
-由于时域混合场积分方程是时域电场积分方程与时域磁场积分方程的线性组合，因此时域混合场积分方程时间步进算法的阻抗矩阵特征与时域电场积分方程时间步进算法的阻抗矩阵特征相同。时域阻抗元素的存储技术也是关键技术之一，采用合适的阻抗元素存储方式可以提高并行算法的计算效率。
-
-\subsection{数值算例与分析}
-由于时域混合场积分方程是时域电场积分方程与时域磁场积分方程的线性组合，因此时域混合场积分方程时间步进算法的阻抗矩阵特征与时域电场积分方程时间步进算法的阻抗矩阵特征相同。
-
-\begin{algorithm}[H]
-    \KwData{this text}
-    \KwResult{how to write algorithm with \LaTeX2e}
-    initialization\;
-    \While{not at end of this document}{
-        read current\;
-        \eIf{understand}{
-            go to next section\;
-            current section becomes this one\;
-        }{
-            go back to the beginning of current section\;
-        }
-    }
-    \caption{How to wirte an algorithm.}
-\end{algorithm}
-
-由于时域混合场积分方程是时域电场积分方程与时域磁场积分方程的线性组合，因此时域混合场积分方程时间步进算法的阻抗矩阵特征与时域电场积分方程时间步进算法的阻抗矩阵特征相同。
-
-\section{时域积分方程时间步进算法矩阵方程的求解}
-
-\section{本章小结}
-本章首先研究了时域积分方程时间步进算法的阻抗元素精确计算技术，分别采用DUFFY变换法与卷积积分精度计算法计算时域阻抗元素，通过算例验证了计算方法的高精度。
-
-\chapter{时域积分方程数值方法研究}
-\section{时域积分方程时间步进算法的阻抗元素精确计算}
-时域积分方程时间步进算法的阻抗元素直接影响算法的后时稳定性，因此阻抗元素的计算是算法的关键之一，采用精度高效的方法计算时域阻抗元素是时域积分方程时间步进算法研究的重点之一。
-
-\section{时域积分方程时间步进算法阻抗矩阵的存储}
-时域阻抗元素的存储技术也是时间步进算法并行化的关键技术之一，采用合适的阻抗元素存储方式可以很大的提高并行时间步进算法的计算效率。
-
-\subsection{时域积分方程时间步进算法产生的阻抗矩阵的特征}
-由于时域混合场积分方程是时域电场积分方程与时域磁场积分方程的线性组合，因此时域混合场积分方程时间步进算法的阻抗矩阵特征与时域电场积分方程时间步进算法的阻抗矩阵特征相同。
-
-\subsection{数值算例与分析}
-如表\ref{tablea}所示给出了时间步长分别取0.4ns、0.5ns、0.6ns 时的三种存储
-方式的存储量大小。
-
-\begin{table}[h]
-\caption{计算$2m\times 2m$理想导体平板时域感应电流采用的三种存储方式的存储量比较。}
-\begin{tabular}{cccc}
-\toprule
-\multirow{2}{*}{时间步长} & \multicolumn{3}{c}{存储方式} \\
-\cmidrule{2-4}
-& 非压缩存储方式 & 完全压缩存储方式 & 基权函数压缩存储方式 \\
-\midrule
-0.4ns & 5.59 MB & 6.78 MB & 6.78 MB\\
-0.5ns & 10.17 MB & 5.58 MB & 5.58 MB \\
-0.6ns & 8.38MB & 4.98 MB & 4.98 MB \\
-\bottomrule
-\end{tabular}
-\label{tablea}
-\end{table}
-
-如图\ref{picd}所示给出了时间步长选取为0.5ns 时采用三种不同存储方式计算的平板中心处$x$方向的感应电流值与IDFT 方法计算结果的比较，……。如图\ref{pice}所示给出了存储方式为基权函数压缩存储方式，时间步长分别取0.4ns、0.5ns、0.6ns时平板中心处$x$方向的感应电流计算结果，从图中可以看出不同时间步长的计算结果基本相同。
-
-\begin{figure}[h]
-\subfloat[]{
-    \label{picd}
-    \includegraphics[width=6.77cm]{picd.pdf}
-}
-\subfloat[]{
-    \label{pice}
-    \includegraphics[width=7.04cm]{pice.pdf}
-}
-\caption{$2m\times 2m$的理想导体平板中心处感应电流$x$分量随时间的变化关系。(a)不同存储方式的计算结果与IDFT方法的结果比较；(b)不同时间步长的计算结果比较比较比较}
-\label{fig2}
-\end{figure}
-
-由于时域混合场积分方程是时域电场积分方程与时域磁场积分方程的线性组合，因此时域混合场积分方程时间步进算法的阻抗矩阵特征与时域电场积分方程时间步进算法的阻抗矩阵特征相同。
-
-\section{时域积分方程时间步进算法矩阵方程的求解}
-\begin{theorem}
-如果时域混合场积分方程是时域电场积分方程与时域磁场积分方程的线性组合。
-\end{theorem}
-\begin{proof}
-由于时域混合场积分方程是时域电场积分方程与时域磁场积分方程的线性组合，因此时域混合场积分方程时间步进算法的阻抗矩阵特征与时域电场积分方程时间步进算法的阻抗矩阵特征相同。
-\end{proof}
-\begin{corollary}
-时域积分方程方法的研究近几年发展迅速，在本文研究工作的基础上，仍有以下方向值得进一步研究。
-\end{corollary}
-\begin{lemma}
-因此时域混合场积分方程时间步进算法的阻抗矩阵特征与时域电场积分方程时间步进算法的阻抗矩阵特征相同。
-\end{lemma}
-
-\section{本章小结}
-本章首先研究了时域积分方程时间步进算法的阻抗元素精确计算技术，分别采用DUFFY 变换法与卷积积分精度计算法计算时域阻抗元素，通过算例验证了计算方法的高精度。
-
-\chapter{全文总结与展望}
-
-\section{全文总结}
-本文以时域积分方程方法为研究背景，主要对求解时域积分方程的时间步进算法以及两层平面波快速算法进行了研究。
-
-\section{后续工作展望}
-时域积分方程方法的研究近几年发展迅速，在本文研究工作的基础上，仍有以下方向值得进一步研究：
-
-\thesisacknowledgement
-在攻读博士学位期间，首先衷心感谢我的导师XXX教授
-
-\thesisappendix
-
-\chapter{中心极限定理的证明}
-
-\section{高斯分布和伯努利实验}
-
-
-% Uncomment to list all the entries of the database.
-% \nocite{*}
-
-\thesisbibliography{reference}
-
-%
-% Uncomment following codes to load bibliography database with native
-% \bibliography command.
-%
-% \nocite{*}
-% \bibliographystyle{thesis-uestc}
-% \bibliography{reference}
-%
-
-\thesisaccomplish{publications}
-
-\thesistranslationoriginal
-\section{The OFDM Model of Multiple Carrier Waves}
-
-\thesistranslationchinese
-\section{基于多载波索引键控的正交频分多路复用系统模型}
-\end{comment}
 
 \end{document}
