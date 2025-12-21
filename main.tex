@@ -120,7 +120,7 @@ $$G(x,y;\sigma) = \frac{1}{2\pi\sigma^2} e^{-\frac{x^2+y^2}{2\sigma^2}}$$
 \chapter{Weber 对比度提取与可视化实现}
 \label{cha:3}
 
-实验中使用的图片如图\ref{fig:test}所示，使用窗宽为 $71x71$ 的高斯滤波器。
+实验中使用的图片如图\ref{fig:test}所示，使用窗宽为 71x71 的高斯滤波器。
 
 \begin{figure}[h]
     \centering
@@ -207,23 +207,23 @@ $$G(x,y;\sigma) = \frac{1}{2\pi\sigma^2} e^{-\frac{x^2+y^2}{2\sigma^2}}$$
     \label{fig:w_heatmap}
 \end{figure}
 
-\subsection{利用 Weber 对比度重建图像}
-Weber 对比度 $C_W(x,y)$ 作为无量纲相对量，且分布非均匀。为实现可视化，需构建从对比度空间到图像灰度空间的映射函数，再构建从灰度空间到图像彩色空间的映射函数。
+\subsection{可视化 Weber 对比度}
+Weber 对比度 $C_W(x,y)$ 作为无量纲相对量，且分布非均匀。为直观展示其空间分布，需构建从对比度空间到图像灰度空间的映射函数，再构建从灰度空间到图像彩色空间的映射函数。
 
 \subsubsection{构建从灰度空间到彩色空间的映射函数}
-Weber 对比度的计算在灰度空间进行，为了更加直观地观察增强效果，需要将重建后的灰度图像映射回彩色空间。本课程设计采用的映射策略为：将原始彩色图像转换至 HSV 色彩空间，随后用重建后的灰度图像替换 V（明度）通道，再逆变换回 RGB 色彩空间。
+Weber 对比度的计算在灰度空间进行，为了更加直观地观察对比度分布及增强效果，需要将可视化用的灰度结果映射回彩色空间。本课程设计采用的映射策略为：将原始彩色图像转换至 HSV 色彩空间，随后用可视化得到的灰度图像替换 V（明度）通道，再逆变换回 RGB 色彩空间。
 
-\subsubsection{线性缩放得到重建图像}
-首先对 Weber 对比度采用 \texttt{mat2gray} 函数进行线性缩放，将其映射至 $[0, 1]$ 区间，得到初步的重建图像，如图\ref{fig:w_direct}所示。与第\ref{ssec:histo}部分的分析一致，重建图像整体亮度较暗，需要进一步的处理以改善视觉效果。本研究采用了两种不同的增强方法，分别为伽马变换与直方图均衡化，增强结果分别如图\ref{fig:w_gamma}和图\ref{fig:w_histoeq}所示。
+\subsubsection{线性缩放得到可视化图像}
+首先对 Weber 对比度采用 \texttt{mat2gray} 函数进行线性缩放，将其映射至 $[0, 1]$ 区间，得到初步的可视化图像，如图\ref{fig:w_direct}所示。与第\ref{ssec:histo}部分的分析一致，可视化结果整体亮度较暗，需要进一步的处理以改善视觉效果。本研究采用了两种不同的增强方法，分别为伽马变换与直方图均衡化，增强结果分别如图\ref{fig:w_gamma}和图\ref{fig:w_histoeq}所示。
 
 \begin{figure}[hbtp]
     \centering
     \includegraphics[width=0.8\textwidth, trim=0cm 7cm 0cm 7cm, clip]{./pic/weber_direct.pdf}
-    \caption{Weber 对比度直接重建结果}
+    \caption{Weber 对比度直接可视化结果}
     \label{fig:w_direct}
 \end{figure}
 
-\subsubsection{对重建图像实施伽马变换}
+\subsubsection{对可视化结果实施伽马变换}
 伽马变换（Gamma Correction）源于显示设备的非线性光电响应特性建模，现已广泛应用于图像的感知亮度调整\citing{poynton2012digital}。其数学形式为幂律变换：
 \begin{equation}
     \label{eq:gamma}
@@ -246,11 +246,11 @@ Weber 对比度的计算在灰度空间进行，为了更加直观地观察增�
     \item 经验性地平衡增强效果与噪声放大风险，避免过度增强导致的伪影。
 \end{itemize}
 
-变换后的对比度 $\hat{C}_W$ 替换 HSV 空间的明度分量，经逆变换得到感知优化的重建图像 $\mathbf{I}_{wg}$（图\ref{fig:w_gamma}）。伽马变换的优势在于计算复杂度低（单点操作，复杂度 $O(MN)$），且能够依据人类视觉系统的非线性响应特性实现亮度的感知均衡化。
+变换后的对比度 $\hat{C}_W$ 替换 HSV 空间的明度分量，经逆变换得到感知优化的可视化图像 $\mathbf{I}_{wg}$（图\ref{fig:w_gamma}）。伽马变换的优势在于计算复杂度低（单点操作，复杂度 $O(MN)$），且能够依据人类视觉系统的非线性响应特性实现亮度的感知均衡化。
 
 由于 Weber 对比度分布的非均匀性较为显著，经伽马变换后的结果（如图\ref{fig:w_gamma}所示）仍未达到理想效果。虽然亮度有所改善，但整体图像依然偏暗，难以充分展现对比度信息的细节特征。
 
-\subsubsection{对重建图像实施直方图均衡化}
+\subsubsection{对可视化结果实施直方图均衡化}
 直方图均衡化（Histogram Equalization, HE）是基于概率论的全局对比度增强技术，其理论基础是通过累积分布函数（Cumulative Distribution Function, CDF）变换实现概率密度的均匀化\citing{pizer1987adaptive}。
 
 设归一化 Weber 对比度 $\tilde{C}_W$ 的概率密度函数为 $p_C(r)$，其累积分布函数定义为：
@@ -272,7 +272,7 @@ Weber 对比度的计算在灰度空间进行，为了更加直观地观察增�
     s_k = T(r_k) = \sum_{j=0}^{k} p_C(r_j) = \sum_{j=0}^{k} \frac{n_j}{MN}, \quad k=0,1,\ldots,L-1
 \end{equation}
 
-应用于 Weber 对比度重建时，算法流程为：
+应用于 Weber 对比度可视化时，算法流程为：
 \begin{enumerate}
     \item 对 $\tilde{C}_W$ 构建归一化直方图 $\{p_C(r_k)\}_{k=0}^{L-1}$；
     \item 计算累积分布函数 $\{F_C(r_k)\}$ 并作为映射表；
@@ -298,28 +298,28 @@ Weber 对比度的计算在灰度空间进行，为了更加直观地观察增�
         \includegraphics[width=0.45\textwidth, trim=0cm 7cm 0cm 5cm, clip]{./pic/weber_histoeq.pdf}
         \label{fig:w_histoeq}
     }
-    \caption{Weber 对比度重建的增强方法对比}
+    \caption{Weber 对比度可视化的增强方法对比}
 \end{figure}
 
 
-\section{不同滤波器下的 Weber 对比度重建结果}
+\section{不同滤波器下的 Weber 对比度可视化结果}
 
 \subsection{滤波器对比}
-Weber 对比度的核心在于对局部背景 $I_s$ 的估计。背景的计算本质上是一种低通滤波，滤波器类型与参数直接决定了 $I_s$ 的空间尺度与平滑特性，从而影响 $C_W$ 的数值分布与重建图像的观感。在本设计中，分别采用了均值滤波器与高斯滤波器来构造背景：
+Weber 对比度的核心在于对局部背景 $I_s$ 的估计。背景的计算本质上是一种低通滤波，滤波器类型与参数直接决定了 $I_s$ 的空间尺度与平滑特性，从而影响 $C_W$ 的数值分布与可视化结果的观感。在本设计中，分别采用了均值滤波器与高斯滤波器来构造背景：
 \begin{equation}
     I_s^{\mathrm{mean}}(x,y) = I(x,y) \circledast w_{\mathrm{mean}}, \quad w_{\mathrm{mean}}(i,j)=\frac{1}{MN}
 \end{equation}
 \begin{equation}
     I_s^{\mathrm{Gauss}}(x,y) = I(x,y) \circledast G(\sigma), \quad G(x,y;\sigma)=\frac{1}{2\pi\sigma^2}\exp\!\left(-\frac{x^2+y^2}{2\sigma^2}\right)
 \end{equation}
-两者的关键差异在于权重分布：均值滤波对邻域内像素赋予相同权重，边缘处易出现显著的模糊与“阶跃平滑”现象；高斯滤波则随与中心距离增大而权重递减，更接近人眼视觉系统的空间权重特性，因而在保留边缘与纹理方面更占优势。依据式\ref{actual_weber}，在采用相同窗宽时，$I_s^{\mathrm{Gauss}}$ 通常能在不显著引入伪影的前提下抑制噪声并保持细节，重建图像在整体亮度与细节显著性之间呈现更合理的平衡；而 $I_s^{\mathrm{mean}}$ 的重建结果更倾向于全局平滑，细微结构的对比度被抑制，边缘过渡变钝。综合考虑鲁棒性与感知质量，高斯滤波更适合作为 Weber 对比度的背景估计器。
+两者的关键差异在于权重分布：均值滤波对邻域内像素赋予相同权重，边缘处易出现显著的模糊与“阶跃平滑”现象；高斯滤波则随与中心距离增大而权重递减，更接近人眼视觉系统的空间权重特性，因而在保留边缘与纹理方面更占优势。依据式\ref{actual_weber}，在采用相同窗宽时，$I_s^{\mathrm{Gauss}}$ 通常能在不显著引入伪影的前提下抑制噪声并保持细节，可视化结果在整体亮度与细节显著性之间呈现更合理的平衡；而 $I_s^{\mathrm{mean}}$ 的可视化结果更倾向于全局平滑，细微结构的对比度被抑制，边缘过渡变钝。综合考虑鲁棒性与感知质量，高斯滤波更适合作为 Weber 对比度的背景估计器。
 
 \subsection{窗宽对比}
 窗宽（或 $\sigma$）决定了背景估计的空间尺度。本设计选取了三种代表性的尺度 $w\in\{5,\,71,\,351\}$，并令 $\sigma= \lfloor (w-1)/6 \rfloor$ 保持高斯核覆盖范围与窗宽的对应关系。不同尺度下的典型表现可概括如下：
 \begin{description}
-    \item[小尺度（$w=5$）] 背景高度局部化，平坦区域的 $C_W$ 接近 0，边缘与细纹理处呈现窄而尖的响应峰；重建图在细节处对比强，但对噪声也更敏感，暗区可能出现颗粒感；适用于强化细节的场景，但需配合去噪策略。
-    \item[中尺度（$w=71$）] 在噪声抑制与边缘保留之间取得较好平衡，是默认参数选择；$C_W$ 的动态范围适中，重建图整体亮度更稳定，细节显著性与视觉舒适度兼顾，适合一般场景。
-    \item[大尺度（$w=351$）] 背景近似全局照度场，$C_W$ 在大结构与缓慢渐变区域的相对变化更显著；但在强边缘附近可能出现环状伪影与过增强区域，重建图容易产生主观不适，应谨慎使用或结合后处理（如边缘抑制、引导滤波）。
+    \item[小尺度（$w=5$）] 背景高度局部化，平坦区域的 $C_W$ 接近 0，边缘与细纹理处呈现窄而尖的响应峰；可视化结果在细节处对比强，但对噪声也更敏感，暗区可能出现颗粒感；适用于强化细节的场景，但需配合去噪策略。
+    \item[中尺度（$w=71$）] 在噪声抑制与边缘保留之间取得较好平衡，是默认参数选择；$C_W$ 的动态范围适中，可视化结果整体亮度更稳定，细节显著性与视觉舒适度兼顾，适合一般场景。
+    \item[大尺度（$w=351$）] 背景近似全局照度场，$C_W$ 在大结构与缓慢渐变区域的相对变化更显著；但在强边缘附近可能出现环状伪影与过增强区域，可视化结果容易产生主观不适，应谨慎使用或结合后处理（如边缘抑制、引导滤波）。
 \end{description}
 
 \begin{figure}[hbtp]
@@ -336,7 +336,7 @@ Weber 对比度的核心在于对局部背景 $I_s$ 的估计。背景的计算�
         \includegraphics[width=0.3\textwidth, trim=0cm 7cm 0cm 5cm, clip]{./pic/w_m_351.pdf}
         \label{fig:w_m351}
     }
-    \caption{根据不同窗宽的均值滤波器得到的 Weber 对比度重建图像}
+    \caption{根据不同窗宽的均值滤波器得到的 Weber 对比度可视化图像}
     \label{fig:w_m}
 \end{figure}
 
@@ -354,7 +354,7 @@ Weber 对比度的核心在于对局部背景 $I_s$ 的估计。背景的计算�
         \includegraphics[width=0.3\textwidth, trim=0cm 7cm 0cm 5cm, clip]{./pic/w_g_351.pdf}
         \label{fig:w_g351}
     }
-    \caption{根据不同窗宽的高斯滤波器得到的 Weber 对比度重建图像}
+    \caption{根据不同窗宽的高斯滤波器得到的 Weber 对比度可视化图像}
     \label{fig:w_g}
 \end{figure}
 
@@ -372,7 +372,7 @@ Weber 对比度的核心在于对局部背景 $I_s$ 的估计。背景的计算�
     \item 绿色成分描述中尺度的纹理与形状特征，兼顾细节与均衡；
     \item 蓝色成分体现大尺度的照度与缓慢渐变背景，是全局光照的指示器。
 \end{itemize}
-通过图\ref{fig:w_fm}和图\ref{fig:w_fg}对比 $\mathbf{F}_{\mathrm{mean}}$ 与 $\mathbf{F}_{\mathrm{Gauss}}$，可观察到前者的边缘颜色过渡更突兀、细节显得“块状”，而后者在同尺度下更为平滑且层次自然。这一融合视图有助于参数选取与直觉验证：当红通道过强且伴随噪声纹理，应适当增大窗宽或改用高斯核；当蓝通道主导且细节被压制，则应缩小窗宽或引入非线性增强（如伽马校正、对比度受限的自适应直方图均衡化）。综合实验观察，采用高斯滤波、窗宽 $w=71$的融合结果在边缘保留与视觉舒适度方面更具优势，也与基于 Weber 对比度的重建图达到较好的主观一致性。
+通过图\ref{fig:w_fm}和图\ref{fig:w_fg}对比 $\mathbf{F}_{\mathrm{mean}}$ 与 $\mathbf{F}_{\mathrm{Gauss}}$，可观察到前者的边缘颜色过渡更突兀、细节显得“块状”，而后者在同尺度下更为平滑且层次自然。这一融合视图有助于参数选取与直觉验证：当红通道过强且伴随噪声纹理，应适当增大窗宽或改用高斯核；当蓝通道主导且细节被压制，则应缩小窗宽或引入非线性增强（如伽马校正、对比度受限的自适应直方图均衡化）。综合实验观察，采用高斯滤波、窗宽 $w=71$的融合结果在边缘保留与视觉舒适度方面更具优势，也与基于 Weber 对比度的可视化图达到较好的主观一致性。
 
 \begin{figure}[hbtp]
     \includegraphics[width=0.8\textwidth, trim=0cm 7cm 0cm 5cm, clip]{./pic/weber_fuse_m.pdf}
@@ -432,7 +432,7 @@ Weber 对比度的核心在于对局部背景 $I_s$ 的估计。背景的计算�
     \item \textbf{色彩稳定}：HSV 的 V 替换策略避免了色相偏移，主观色彩更稳定。
 \end{itemize}
 
-与\ref{cha:3}章的两种重建增强（伽马变换与全局直方图均衡化）相比，式\ref{eq:enh_transform} 的组合模型在保留细节、控制噪声与维持整体亮度方面更为平衡，同时，在图\ref{fig:w_histoeq}中出现的块状失真也得到了显著改善。本方法以局部对比度为导向、以背景照度为锚点进行调节，能够更贴合人眼对亮度与对比度的联合感知特性。此外，该模型参数具有明确的物理/感知含义，便于根据直方图与场景内容进行快速调优。
+与\ref{cha:3}章的两种可视化增强（伽马变换与全局直方图均衡化）相比，式\ref{eq:enh_transform} 的组合模型在保留细节、控制噪声与维持整体亮度方面更为平衡，同时，在图\ref{fig:w_histoeq}中出现的块状失真也得到了显著改善。本方法以局部对比度为导向、以背景照度为锚点进行调节，能够更贴合人眼对亮度与对比度的联合感知特性。此外，该模型参数具有明确的物理/感知含义，便于根据直方图与场景内容进行快速调优。
 
 \begin{figure}[hbt]
     \includegraphics[width=\textwidth, trim=0cm 7cm 0cm 7cm, clip]{./pic/weber_res.pdf}
